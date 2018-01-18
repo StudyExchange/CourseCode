@@ -1,0 +1,5 @@
+#Ipython Notebook
+.ipynb_checkpoints
+
+#Visual Studio Code
+.vscode
