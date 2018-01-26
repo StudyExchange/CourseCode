@@ -5,4 +5,4 @@
 
 
 ### 其他问题：
-1. 解决git中文文件名quotepath编码：```git config --global core.quotepath false```。
+1. 解决git中文文件名quotepath编码：```git config --global core.quotepath false```。因为即使中文文件名没有使用quotepath编码，也会导致Github再Web端无法正常预览Jupyter文件，所以，后来把文件名全都改成了英文。
