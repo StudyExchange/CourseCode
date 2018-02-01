@@ -42,114 +42,97 @@ print(y_data)
 print(x_data.shape)
 print(y_data.shape)
 
-# （1）经验熵H(D)
+
 import math
-
-def empirical_entropy(labels):
-    # labels：int类型的list
+# 对于指定数据集（只根据label的数据），求基尼指数
+def gini(labels):
+    # 【p69，公式5.24】给定样本集合D，求基尼系数
     lenght = len(labels)
-    class_names = set(labels)
-    # 用字典来统计各个值出现的次数
-    class_group = {}
-    # 初始化字典，存储各个类别的数量都为0
-    for c in class_names:
-        class_group[c] = list(labels).count(c)
-    # 汇总各个类别，【p62，公式5.7】
-#     entropies = []
-#     for g in class_group.values():
-#         entropies.append(- g / lenght * math.log2(g / lenght))
-#     entropy = sum(entropies)
-    entropy = sum([- g / lenght * math.log2(g / lenght) for g in class_group.values()]) #这一行代码等同于前面4行
-    return entropy
-
-entropy = empirical_entropy(y_data)
-print('（1）经验熵H(D) = %.3f' % entropy)
-
-# （2）条件经验熵H(D|A)
-
-def conditional_empirical_entropy(feature, labels):
-    # feature：单个特征的int类型的list，int是map之后的类别，支持多个特征取条件经验熵
-    # labels：int类型的list，int是map之后的类别
-    lenght = len(labels)
-    classes = set(feature)
-    # 按feature对数据进行分组
-    feature_group = {}
+    classes = list(set(labels))
+    ckd_squre = []
     for c in classes:
-        indexes = [i for i in range(len(feature)) if feature[i] == c]
-        feature_group[c] = indexes
-#     print(feature_group)
-    entropies = []
-    # 【p62，公式5.8】
-    for indexes in feature_group.values():
-        di_d = len(indexes) / lenght
-        entropies.append(di_d*empirical_entropy(labels[indexes]))
-    entropy = sum(entropies)
-    return entropy
+        ckd_squre.append(math.pow(list(labels).count(c)/lenght, 2))
+    result = 1 - sum(ckd_squre)
+    return result
 
-entropy = conditional_empirical_entropy(x_data[:, 0], y_data)
-print('（2）条件经验熵H(D|A) = %.3f' % entropy)
+assert gini([0,]) == 0
+assert gini([0, 0]) == 0
+assert gini([0, 1]) == 0.5
+assert gini([0, 0, 0, 1]) == 0.375
 
-# （3）信息增益g(D,A)
-def information_gain(feature, labels):
-    # 【p62，公式5.9】
-    return empirical_entropy(labels) - conditional_empirical_entropy(feature, labels)
 
-gain = information_gain(x_data[:, 0], y_data)
-print('（3）信息增益g(D,A) = %.3f' % gain)
+# 对于某个特征条件下，求集合的基尼指数
+def gini_feature(features, labels, class_name):
+    # 【p69，公式5.24】给定样本集合D，求基尼系数
+    lenght = len(labels)
+    # 使用特征区分数据
+    label_index0 = [labels[i] for i in range(lenght) if features[i] == class_name]
+    label_index1 = [labels[i] for i in range(lenght) if features[i] != class_name]
+    # 【p70，公式5.25】对于某个特征条件下，求集合的基尼指数
+    # print((gini(label_index0)), (gini(label_index1)))
+    result = len(label_index0)/lenght*(gini(label_index0)) + len(label_index1)/lenght*(gini(label_index1))
+    return result
 
-# 计算各个特征的信息增益
-for i in range(x_data.shape[1]):
-    print(information_gain(x_data[:, i], y_data))
+test_f = [10, 10, 10, 10, 11, 11, 11, 11]
+test_l = [1,  1,  1,  1,  1,  1,  1,  1]
+print(gini_feature(test_f, test_l, 10))
+assert gini_feature(test_f, test_l, 10) == 0
 
-def get_max_information_gain(features, labels):
-    gains = [information_gain(features[:, i], labels) for i in range(features.shape[1])]
-    sorted_indexes = np.argsort(gains)
-#     print(sorted_indexes)
-    return sorted_indexes[-1], gains[sorted_indexes[-1]]
+test_f = [10, 10, 10, 10, 11, 11, 11, 11]
+test_l = [1,  1,  0,  0,  1,  1,  0,  0]
+print(gini_feature(test_f, test_l, 10))
+assert gini_feature(test_f, test_l, 10) == 0.5
 
-max_feature_index, max_feature_gain = get_max_information_gain(x_data, y_data)
-print('信息增益最大的index是：%s，对应特征是：A(%s)，信息增益是：%.3f' % (max_feature_index, max_feature_index + 1, max_feature_gain))
+test_f = [10, 10, 10, 10, 11, 11, 11, 11]
+test_l = [1,  1,  1,  0,  0,  1,  1,  1]
+print(gini_feature(test_f, test_l, 10))
+assert gini_feature(test_f, test_l, 10) == 0.375
 
-# （3）信息增益比gr(D,A)
-def information_gain_ratio(feature, labels):
-    # 【p62，公式5.9】
-    return information_gain(feature, labels) / empirical_entropy(labels)
-
-gain = information_gain_ratio(x_data[:, 0], y_data)
-print('（3）信息增益比gr(D,A) = %.3f' % gain)
-
-# 计算各个特征的信息增益比
-for i in range(x_data.shape[1]):
-    print(information_gain_ratio(x_data[:, i], y_data))
-
-def get_max_information_gain_ratio(features, labels):
-    gains = [information_gain_ratio(features[:, i], labels) for i in range(features.shape[1])]
-    sorted_indexes = np.argsort(gains)
-#     print(sorted_indexes)
-    return sorted_indexes[-1], gains[sorted_indexes[-1]]
-
-max_feature_index, max_feature_gain = get_max_information_gain_ratio(x_data, y_data)
-print('信息增益最大的index是：%s，对应特征是：A(%s)，信息增益是：%.3f' % (max_feature_index, max_feature_index + 1, max_feature_gain))
 
 class Node(object):
-    def __init__(self, sub_space, labels):
-        # 如果不是叶子节点，则feature_index=index(特征再数据集中横向的索引位置), pre_label=None
-        # 如果  是叶子节点，则feature_index=None, pre_label=class
-        self._sub_space = sub_space
-        self._labels = labels
+    def __init__(self, features, labels):
+        self._features = features # 叶子节点的数据的x_data
+        self._labels = labels # 叶子节点的数据的y_data
+        self._label = None # 叶子节点的类
+        self._lchild = None
+        self._rchild = None
         self._feature_index = None
-        self._pre_label = None
-        self._father_node = None
-        self._can_pruned = None # 用于保存修剪状态，可修剪：0，不可修剪：1
-        self._children = {}
-    # 属性
+        self._split_value = None
+        self._fixed_indexes = []
+        if len(self._features) > 0:
+            self._feature_indexes = list(range(len(self._features[0])))
     @property
-    def sub_space(self):
-        return self._sub_space
+    def features(self):
+        return self._features
+    @features.setter
+    def features(self, value):
+        self._features = value
     @property
     def labels(self):
         return self._labels
+    @labels.setter
+    def labels(self, value):
+        self._labels = value
+    @property
+    def label(self):
+        return self._label
+    @label.setter
+    def label(self, value):
+        self._label = value
 
+    @property
+    def lchild(self):
+        return self._lchild
+    @lchild.setter
+    def lchild(self, value):
+        self._lchild = value
+    @property
+    def rchild(self):
+        return self._rchild
+    @rchild.setter
+    def rchild(self, value):
+        self._rchild = value
+        
     @property
     def feature_index(self):
         return self._feature_index
@@ -157,178 +140,94 @@ class Node(object):
     def feature_index(self, value):
         self._feature_index = value
     @property
-    def pre_label(self):
-        return self._pre_label
-    @pre_label.setter
-    def pre_label(self, value):
-        self._pre_label = value
+    def split_value(self):
+        return self._split_value
+    @split_value.setter
+    def split_value(self, value):
+        self._split_value = value
     @property
-    def father_node(self):
-        return self._father_node
-    @father_node.setter
-    def father_node(self, value):
-        self._father_node = value
-    @property
-    def can_pruned(self):
-        return self._can_pruned
-    @can_pruned.setter
-    def can_pruned(self, value):
-        self._can_pruned = value
+    def fixed_indexes(self):
+        return self._fixed_indexes
+    @fixed_indexes.setter
+    def fixed_indexes(self, value):
+        self._fixed_indexes = value
 
     @property
-    def children(self):
-        return self._children
-    @children.setter
-    def children(self, value):
-        self._children = value
-    
-    # 方法
+    def feature_indexes(self):
+        return self._feature_indexes
+    def split(self, indexes):
+        features = self._features[indexes, :]
+        labels = self._labels[indexes]
+        return features, labels
     def is_leaf(self):
-        if self._feature_index is None and self._pre_label is not None:
+        if self._label: # label有值，说明是叶子节点
             return True
-        elif self._feature_index is not None and self._pre_label is None:
-            return False
+        return False
+    def printt(self):
+        if self.is_leaf():
+            print(' '*4*len(self._fixed_indexes), end='') # 每级4个空格
+            print((self._label))
         else:
-            raise Exception('节点状态异常')
+            print(' '*4*len(self._fixed_indexes), end='') # 每级4个空格
+            print((self._feature_index, self._split_value))
 
 
-def get_max_class(labels):
-    classes = set(labels)
-    class_group = []
-    for c in classes:
-        class_group.append(list(labels).count(c))
-    max_feature_index = np.argsort(class_group)[-1]
-    return list(classes)[max_feature_index]
-
-test_labels = [2, 3, 3, 2, 1, 1, 1, 1]
-class_name = get_max_class(test_labels)
-assert 1 == class_name
-
-def c45(features, labels, epsilon=0.1):
-    assert len(features) > 0
-    assert len(features) == len(labels)
-    length = len(labels)
-    classes = set(labels)
-    # 【p65，算法5.3第（1）步】
-    if len(classes) == 1:
-        return Node(features, labels, None, classes.pop())
-    # 【p65，算法5.3第（2）步】获取实例数最大的类
-    if len(features[0]) == 0:
-        max_class = get_max_class(labels)
-        return Node(features, labels, None, max_class)
-    # 【p65，算法5.3第（3）步】选择信息增益比最大的特征
-    max_feature_index, max_feature_gain = get_max_information_gain_ratio(features, labels)
-    # 【p65，算法5.3第（4）步】信息增益小于阈值
-    if max_feature_gain < epsilon:
-        max_class = get_max_class(labels)
-        return Node(features, labels, None, max_class)
-    # 【p65，算法5.3第（5）（6）步】构建多叉树的节点
-    feature_indexes = list(range(features.shape[1]))
-    feature_indexes.remove(max_feature_index) # 第（6）步，从数据集中剔除当前特征
-    minus_features = features[:,feature_indexes]
-    max_feature = features[:, max_feature_index] # 按增益最大的特征分割数据集
-    max_classes = set(max_feature)
-    # 按类型对数据集进行分割
-    node = Node(features, labels, max_feature_index)
-    for c in max_classes:
-        indexes = [i for i in range(len(max_feature)) if max_feature[i] == c]
-        print('feature:%s' % c)
-        print(minus_features[indexes])
-        print(labels[indexes])
-        child_node = c45(minus_features[indexes], labels[indexes])
-        # pdb.set_trace()
-        node.children[c] = child_node
+def cart(node, min_sample_count=2, min_gini=0.1):
+    # 【p71，第一段，停止条件：样本数小于预定阈值（默认值2，即最少一个样本）】
+    if len(node.labels) < min_sample_count:
+        # 参考【p63，算法5.2第（2）步】获取实例数最大的类
+        node.label = max(set([1,2,4]))
+        return node
+    # 【p71，第一段，停止条件：样本属于同一个类】
+    if len(list(set(node.labels))) == 1:
+        node.label = node.labels[0]
+        return node
+    # 【p71，第一段，停止条件：小于基尼指数阈值】
+    if gini(node.labels) < min_gini:
+        # 书中没有说明，这里我取实例数最大的类
+        node.label = max(set([1,2,4]))
+        return node
+    # 开始选择切分点(feature_index, split_value)
+    split_points = []
+    # 获取没有固定的特征，即可以用于特征选择的特征
+    unfixed_indexes = [i for i in node.feature_indexes if i not in node.fixed_indexes]
+    for i in unfixed_indexes:
+        single_feature = node.features[:, i]
+        classes = list(set(single_feature))
+        for j in classes:
+            gini_index = gini_feature(single_feature, node.labels, j)
+            split_points.append((i, j, gini_index))
+    # print(split_points) # 这里检查得到的基尼指数与【p71，例5.4中的数据是否一致】
+    # 获取最小的基尼指数
+    split_points = sorted(split_points, key=lambda g: g[2])
+    print(split_points[0])
+    node.feature_index = split_points[0][0]
+    node.split_value = split_points[0][1]
+    # 区分特征，递归生成节点
+    child_fixed_indexes = node.fixed_indexes.copy() + [node.feature_index]
+    this_feature = node.features[:, node.feature_index]
+    l_indexes = [i for i in range(len(this_feature)) if this_feature[i] == node.split_value] # 左节点存的是split_value的值
+    lf, ll = node.split(l_indexes)
+    l_child = Node(lf, ll)
+    l_child.fixed_indexes = child_fixed_indexes
+    node.lchild = cart(l_child, min_sample_count=2, min_gini=0.1)
+    
+    r_indexes = [i for i in range(len(this_feature)) if this_feature[i] != node.split_value]
+    rf, rl = node.split(r_indexes)
+    r_child = Node(rf, rl)
+    r_child.fixed_indexes = child_fixed_indexes
+    node.rchild = cart(r_child, min_sample_count=2, min_gini=0.1)
     return node
+    
+root_node = Node(x_data, y_data)
+test_tree = cart(root_node)
+pass
 
 
-# 测试函数c45，第1个if分支
-test_features = np.array([[], [], []])
-test_labels = np.array([0, 0, 0])
-test_tree = c45(test_features, test_labels)
-assert isinstance(test_tree, Node)
-assert test_tree.is_leaf()
-
-# 测试函数c45，第2个if分支
-test_features = np.array([[], [], []])
-test_labels = np.array([0, 1, 1])
-test_tree = c45(test_features, test_labels)
-assert isinstance(test_tree, Node)
-assert test_tree.is_leaf()
-assert 101, test_tree.pre_label
-
-# 测试函数c45，第3个if分支，使用前面整理好的数据：x_data和y_data
-test_tree = c45(x_data, y_data, 0.45) # epsilon取0.45，让特征A(3)的增益0.42小于这个阈值
-assert isinstance(test_tree, Node)
-assert test_tree.is_leaf()
-assert 101 == test_tree.pre_label
-
-# 测试函数c45，剩余分支，使用前面整理好的数据：x_data和y_data
-test_tree = c45(x_data, y_data, epsilon=0.1) # epsilon取默认值0.1
-assert isinstance(test_tree, Node)
-assert False == test_tree.is_leaf()
-
-print('*'*8)
-print(test_tree.sub_space)
-print(test_tree.labels)
-
-
-
-
-import queue
-def get_leaves(node):
-    # 层遍历树（用队列实现层遍历），获取所有的叶子节点
-    que = queue.Queue()
-    leaves = []
-    que.put(node)
-    while not que.empty():
-        node = que.get()
-        if node.is_leaf():
-            leaves.append(node)
-        else:
-            for key in node.children.keys():
-                que.put(node.children[key])
-    return leaves
-
-def set_leaves_all_soft(leaves):
-    # 设置所有叶子节点的状态为待处理：0
-    # 不可修剪状态为：1
-    new_leaves = []
-    for node in enumerate(leaves):
-        new_leaves.append((node, 0))
-    return new_leaves
-
-def is_stop(leaves):
-    # 如果全部得叶子节点全都不能再修剪，则停止修剪算法
-    for node in enumerate(leaves):
-        # 如果有一个节点可以修剪，则直接返回False
-        if node[0] == 0:
-            return False
-    else:
-        return True
-
-leaves = get_leaves(test_tree)
-assert len(leaves) == 3
-
-
-def tree_loss(root_node, alpha):
-    pass
-
-def pruning_node():
-    pass
-
-def pruning(node):
-    max_interaction = 100
-    for i in range(max_interaction):
-        leaves = get_leaves(node)
-        leaves = set_leaves_all_soft(leaves)
-        if is_stop(leaves):
-            return node
-        for leaf in leaves:
-            pass
-            # 当前树的损失函数
-            # leaf这个节点的父节点剪枝之后的损失函数
-            # 比较损失函数：
-            # 之前大于之后：剪枝
-            # 否则，设置这个父节点对应的这几个叶子节点的状态都是1
-
-pruning(test_tree)
+# 中序遍历，打印树
+def print_tree(node):
+    node.printt()
+    if not node.is_leaf():
+        print_tree(node.lchild) # 左节点存的是split_value的值
+        print_tree(node.rchild)
+print_tree(test_tree)
