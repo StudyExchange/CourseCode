@@ -8,7 +8,7 @@
 | 无实现 |    5   |
 | 未实现 |   27   |
 | 还没懂 |    4   |
-| 已实现 |    8   |
+| 已实现 |   10   |
 |  合计  |   41   |
 
 
@@ -40,21 +40,21 @@
 - 算法 7.5（SMO算法）algorithm 7.5(SMO algorithm)
 ## 第八章 提升方法
 - 算法 8.1（AdaBoost）algorithm 8.1(adaboost)
-- 算法 8.2（前向分步算法）
+- 算法 8.2（前向分步算法）algorithm 8.2(forward stagewise algorithm)【还没懂】
 - 算法 8.3（回归问题的提升树算法）
 - 算法 8.4（梯度提升算法）
 ## 第九章 EM算法及其推广
-- 算法 9.1（EM算法）
+- 算法 9.1（EM算法）algorithm 9.1(EM algorithm)【未完成】
 - 算法 9.2（高斯混合模型参数估计的EM算法）
 - 算法 9.3（GEM算法1）
 - 算法 9.4（GEM算法2）
 - 算法 9.5（GEM算法3）
 ## 第十章 隐马尔可夫模型
-- 算法 10.1（观测序列的生成）
-- 算法 10.2（观测序列概率的前向算法）
-- 算法 10.3（观测序列概率的后向算法）
-- 算法 10.4（Baum-Welch算法）
-- 算法 10.5（维特比算法）
+- 算法 10.1（观测序列的生成）algorithm 10.1(generation of observation sequence)
+- 算法 10.2（观测序列概率的前向算法）algorithm 10.2(forward stagewise algorithm of observation sequence)
+- 算法 10.3（观测序列概率的后向算法）algorithm 10.3(backward stagewise algorithm of observation sequence)
+- 算法 10.4（Baum-Welch算法）algorithm 10.4(Baum-Welch algorithm)
+- 算法 10.5（维特比算法）algorithm 10.5(viterbi algorithm)
 ## 第十一章 条件随机场
 - 算法 11.1（条件随机场模型学习的改进的迭代尺度法）
 - 算法 11.2（条件随机场模型学习的BFGS算法）

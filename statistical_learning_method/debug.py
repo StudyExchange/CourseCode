@@ -1,167 +1,62 @@
-import numpy as np
 import math
 
-def sign(x):
-    if x >= 0:
-        return 1
-    else:
-        return -1
+class Em(object):
+    def __init__(self, epsilon0=0.001, epsilon1=0.001):
+        self._epsilon0 = epsilon0
+        self._epsilon1 = epsilon1
+        self._max_iteration = 3
+        self._nu = None
+        self._pi = 0
+        self._p = 0
+        self._q = 0
 
-class BaseClassifier(object):
-    def __init__(self):
-        self._split = 0
-        self._error = 0
-        self._less_than = True
-
-    def fit(self, x_data: np.array, y_data: np.array, sample_weight=None):
-        assert len(x_data.shape) == 1
-        assert len(y_data.shape) == 1
-        length = len(x_data)
-        if sample_weight is None:
-            sample_weight = np.ones((length, ))
-        # 下面代码分了两段，需要比较到底并决定是用小于还是大于
-        # 这里是为了用一个函数适应书中的G1(x)，G2(x)，G3(x)3个函数
-        # 其中G1(x)和G2(x)是用的小于，G3(x)用的大于
-        # 小于部分
-        errors_lt = np.zeros((length,))
-        for i in range(length):
-            y_pre = np.zeros((length,))
-            error_i = np.zeros((length,))
-            for j in range(length):
-                y_pre[j] = self._g_less_than(x_data[j], x_data[i])
-            error_i = y_data != y_pre
-            error_i = error_i.astype(int)
-            # 【p138，公式8.1】
-            errors_lt[i] = sum(error_i * sample_weight)
-        split_index_lt = np.argmin(errors_lt)
-        errors_gt = np.zeros((length,))
-        # 大于部分
-        for i in range(length):
-            y_pre = np.zeros((length,))
-            error_i = np.zeros((length,))
-            for j in range(length):
-                y_pre[j] = self._g_greater_than(x_data[j], x_data[i])
-            error_i = y_data != y_pre
-            error_i = error_i.astype(int)
-            # 【p138，公式8.1】
-            errors_gt[i] = sum(error_i * sample_weight)
-        split_index_gt = np.argmin(errors_gt)
-        # 比较小于和大于两个部分
-        if errors_lt[split_index_lt] < errors_gt[split_index_gt]:
-            self._split = x_data[split_index_lt]
-            self._error = errors_lt[split_index_lt]
-        else:
-            self._less_than = False
-            self._split = x_data[split_index_gt]
-            self._error = errors_gt[split_index_gt]
-
-
-    def predict(self, x_test):
-        assert len(x_test.shape) == 1
-        length = len(x_test)
-        y_pre = np.zeros((length,))
-        
-        if self._less_than:
-            for i in range(length):
-                y_pre[i] = self._g_less_than(x_test[i], self._split)
-        else:
-            for i in range(length):
-                y_pre[i] = self._g_greater_than(x_test[i], self._split)
-        return y_pre
-
-    # 【例8.1中，G1(x)，G2(x)是小于】
-    def _g_less_than(self, x, split):
-        return 1 if x < split else -1
-
-    # 【例8.1中，G3(x)是大于】
-    def _g_greater_than(self, x, split):
-        return 1 if x > split else -1
-
+        self._nus = []
+        self._thetas = []
     @property
-    def error(self):
-        return self._error
-
-class Adaboost(object):
-    def __init__(self, classifier_count = 10):
-        self._x_train = None
-        self._y_train = None
-        # 【p138，算法8.1，第（2）步】这里M是分类器的数量，【140】中部，有提到
-        # “步骤（3）线性组合f(x)实现M个基本分类器的加权表决”
-        self._classifier_count = classifier_count
-        
-
-    def fit(self, x_train: np.array, y_train: np.array):
-        self._x_train = x_train
-        self._y_train = y_train
-        self._m = len(self._x_train)
-        # self._n = len(self._x_train[0])
-
-        self._clf = None
-        self._error = 0
-        # self._weight = None
-        self._alpha = 0
-
-        self._classifiers = []
-        self._errors = []
-        self._weights = []
-        self._alphas = []
-        # 【p138，第（1）步，初始化权值】
-        self._weight = np.ones((self._m,)) / self._m
-        for i in range(self._classifier_count):
-            self._clf = BaseClassifier()
-            self._clf.fit(self._x_train, self._y_train, self._weight)
-            self._error = self._clf.error
-            # 【p139，公式8.2】
-            self._alpha = 1. / 2 * math.log((1 - self._error) / self._error)
-            self._weight = self._get_weight()
-
-            self._classifiers.append(self._clf)
-            self._errors.append(self._error)
-            self._alphas.append(self._alpha)
-            self._weights.append(self._weight)
-            print('error: %s' % self._error)
-            print('alpha: %s' % self._alpha)
-            print('weight:%s' % self._weight)
-            print('*'*30)
-            # 终止条件，没有找到书中对应的内容，属于个人添加
-            if(all(self.predict(x_train) == y_train)):
-                print('全部正确分类，满足终止条件：%s of %s' %(i, self._classifier_count))
+    def theta(self):
+        return self._pi, self._p, self._q
+    def train(self, y_train, pi, p, q):
+        length = len(y_train)
+        self._pi = pi
+        self._p = p
+        self._q = q
+        self._thetas.append((pi, p, q))
+        self._nu = [0]*length
+        for i in range(self._max_iteration):
+            # 【p156，公式9.5】
+            for j in range(length):
+                b = self._pi * math.pow(self._p, y_train[j]) * math.pow(1 - self._p, 1 - y_train[j])
+                c = (1 - self._pi) * math.pow(self._q, y_train[j]) * math.pow(1 - self._q, 1 - y_train[j])
+                self._nu[j] = b / (b + c)
+            # 【p156，公式9.6】
+            self._pi = 1. / length * sum(self._nu)
+            # 【p156，公式9.7】
+            self._p = sum([self._nu[k] * y_train[k] for k in range(length)]) / sum(self._nu)
+            # 【p156，公式9.8】
+            self._q = sum([(1 - self._nu[k]) * y_train[k] for k in range(length)]) \
+                        / sum([(1 - self._nu[k]) for k in range(length)])
+            self._thetas.append((self._pi, self._p, self._q))
+            print((self._pi, self._p, self._q))
+            if self.is_stop():
+                print('满足停机条件，终止循环。%s of %s' % (i, self._max_iteration))
                 break
-            pass
 
+    def is_stop(self):
+        # 【p158，中部步骤（4）】停止条件，Q函数还没懂要怎么实现
+        pi0, p0, q0 = self._thetas[-2]
+        pi1, p1, q1 = self._thetas[-1]
+        if all([pi1- pi0 < self._epsilon0, p1 - p0 < self._epsilon0, q1 - q0 < self._epsilon0]):
+            return True
+        return False
+    def q_fun(self):
+        # Q函数还没懂要怎么实现
+        pass
 
-    def predict_prob(self, x_test):
-        y_preds = []
-        for i, clf in enumerate(self._classifiers):
-            y_preds.append(self._alphas[i] * clf.predict(x_test))
-        y_pred = sum(y_preds)
-        return y_pred
-    def predict(self, x_test):
-        # 【p8.7，公式8.7】这里把probability和sign分开成两个函数来实现，
-        # 便于需要probability的情况
-        y_preds = self.predict_prob(x_test)
-        result = np.ones((len(y_preds),))
-        for i in range(len(y_preds)):
-            result[i] = sign(y_preds[i])
-        return result
-
-
-    @property
-    def x_fit(self):
-        return self._x_train
-    @property
-    def y_fit(self):
-        return self._y_train
-    
-    def _get_weight(self):
-        # 【p139，公式8.3，8.4，8.5】
-        weight_factors = self._weight*np.exp(-self._alpha*self._y_train*self._clf.predict(self._x_train))
-        z = sum(weight_factors)
-        new_wf = weight_factors / z
-        return new_wf
-
-x_train = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-y_train = np.array([1, 1, 1,-1,-1,-1, 1, 1, 1,-1])
-ada = Adaboost(10)
-ada.fit(x_train, y_train)
-print(ada.predict(x_train))
+x_train = [1, 1, 0, 1, 0, 0, 1, 0, 1, 1]
+em = Em()
+pi, p, q = (0.5, 0.5, 0.5)
+print('设置初值：pi=%.2f，p=%.2f，q=%.2f' % (pi, p, q))
+em.train(x_train, pi, p, q)
+pi, p, q = (0.4, 0.6, 0.7)
+print('设置初值：pi=%.2f，p=%.2f，q=%.2f' % (pi, p, q))
+em.train(x_train, pi, p, q)
