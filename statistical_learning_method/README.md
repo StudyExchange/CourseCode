@@ -50,7 +50,7 @@
 - 算法 9.4（GEM算法2）
 - 算法 9.5（GEM算法3）
 ## 第十章 隐马尔可夫模型
-- 算法 10.1（观测序列的生成）algorithm 10.1(generation of observation sequence)
+- 算法 10.1（观测序列的生成）algorithm 10.1(generation of observation sequence)【无实现】
 - 算法 10.2（观测序列概率的前向算法）algorithm 10.2(forward stagewise algorithm of observation sequence)
 - 算法 10.3（观测序列概率的后向算法）algorithm 10.3(backward stagewise algorithm of observation sequence)
 - 算法 10.4（Baum-Welch算法）algorithm 10.4(Baum-Welch algorithm)
