@@ -1,62 +1,81 @@
 import math
 
-class Em(object):
-    def __init__(self, epsilon0=0.001, epsilon1=0.001):
-        self._epsilon0 = epsilon0
-        self._epsilon1 = epsilon1
-        self._max_iteration = 3
-        self._nu = None
-        self._pi = 0
-        self._p = 0
-        self._q = 0
+class MarkovForward(object):
+    def probability(self, a, b, pi, output):
+        an = len(a[0]) # a的状态的数量
+        bn = len(b[0]) # b的状态的数量
+        m = len(output) # 观测序列的长度
+        inputs = []
+        total_count = int(math.pow(an, m))
+        result = 0
+        for i in range(total_count): # i表示总的循环数
+            # for j in range(an): # j表示pi的index
+                # index_li = [j]
+            index_li = MarkovForward.get_sequence_index(i, an, m)
+            print('q_t的集合：%s' % index_li, end='。') # 即本次循环的状态集合，即本次循环的选中的盒子的集合
+            prob = pi[index_li[0]] # pi(i1)
+            for k in range(m - 1):
+                prob *= b[index_li[k]][output[k]] # b_i1(o1), b_i2(o2)
+                print('i%s->i%s' % (k, k+1), end='  ')
+                prob *= a[index_li[k]][index_li[k+1]] # a_i1_i2, a_i2_i3
+            prob *= b[index_li[m - 1]][output[m - 1]] # b_i3(o3)
+            print('  %.5f' % prob)
+            result += prob
+        return result
 
-        self._nus = []
-        self._thetas = []
-    @property
-    def theta(self):
-        return self._pi, self._p, self._q
-    def train(self, y_train, pi, p, q):
-        length = len(y_train)
-        self._pi = pi
-        self._p = p
-        self._q = q
-        self._thetas.append((pi, p, q))
-        self._nu = [0]*length
-        for i in range(self._max_iteration):
-            # 【p156，公式9.5】
-            for j in range(length):
-                b = self._pi * math.pow(self._p, y_train[j]) * math.pow(1 - self._p, 1 - y_train[j])
-                c = (1 - self._pi) * math.pow(self._q, y_train[j]) * math.pow(1 - self._q, 1 - y_train[j])
-                self._nu[j] = b / (b + c)
-            # 【p156，公式9.6】
-            self._pi = 1. / length * sum(self._nu)
-            # 【p156，公式9.7】
-            self._p = sum([self._nu[k] * y_train[k] for k in range(length)]) / sum(self._nu)
-            # 【p156，公式9.8】
-            self._q = sum([(1 - self._nu[k]) * y_train[k] for k in range(length)]) \
-                        / sum([(1 - self._nu[k]) for k in range(length)])
-            self._thetas.append((self._pi, self._p, self._q))
-            print((self._pi, self._p, self._q))
-            if self.is_stop():
-                print('满足停机条件，终止循环。%s of %s' % (i, self._max_iteration))
-                break
 
-    def is_stop(self):
-        # 【p158，中部步骤（4）】停止条件，Q函数还没懂要怎么实现
-        pi0, p0, q0 = self._thetas[-2]
-        pi1, p1, q1 = self._thetas[-1]
-        if all([pi1- pi0 < self._epsilon0, p1 - p0 < self._epsilon0, q1 - q0 < self._epsilon0]):
-            return True
-        return False
-    def q_fun(self):
-        # Q函数还没懂要怎么实现
+    @staticmethod
+    def get_sequence_index(num, an, m):
+        if num:
+            index_li = []
+            while num:
+                quotient, remainder = divmod(num, an)
+                num = quotient
+                index_li.append(remainder)
+            if len(index_li) < m:
+                index_li.extend([0]*(m - len(index_li)))
+            return index_li
+        else:
+            return [0]*m
+
+    def is_skip(self, indexes):
         pass
 
-x_train = [1, 1, 0, 1, 0, 0, 1, 0, 1, 1]
-em = Em()
-pi, p, q = (0.5, 0.5, 0.5)
-print('设置初值：pi=%.2f，p=%.2f，q=%.2f' % (pi, p, q))
-em.train(x_train, pi, p, q)
-pi, p, q = (0.4, 0.6, 0.7)
-print('设置初值：pi=%.2f，p=%.2f，q=%.2f' % (pi, p, q))
-em.train(x_train, pi, p, q)
+
+# 测试数据1：测试数据：p177，例10.2（主要的测试数据）
+a = [
+    [0.5, 0.2, 0.3],
+    [0.3, 0.5, 0.2],
+    [0.2, 0.3, 0.5]
+]
+b = [
+    [0.5, 0.5],
+    [0.4, 0.6],
+    [0.7, 0.3]
+]
+pi = [0.2, 0.4, 0.4]
+output = [0, 1, 0]
+
+mf = MarkovForward()
+print(mf.probability(a, b, pi, output))
+
+
+# 测试数据2：测试数据：p173，例10.1（盒子和球模型）（用来与前向和后向算法做对照可以相互印证，结果是否正确）
+a = [
+    [0, 1, 0, 0],
+    [0.4, 0, 0.6, 0],
+    [0, 0.4, 0, 0.6],
+    [0, 0, 0.5, 0.5]
+]
+b = [
+    [0.5, 0.5],
+    [0.3, 0.7],
+    [0.6, 0.4],
+    [0.8, 0.2]
+]
+pi = (0.25, 0.25, 0.25, 0.25)
+output = [0, 0, 1, 1, 0]
+
+mf = MarkovForward()
+print(mf.probability(a, b, pi, output))
+
