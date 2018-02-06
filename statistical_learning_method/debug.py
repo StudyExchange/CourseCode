@@ -1,6 +1,6 @@
 import math
 
-class MarkovForward(object):
+class MarkovDirectly(object):
     def probability(self, a, b, pi, output):
         an = len(a[0]) # a的状态的数量
         bn = len(b[0]) # b的状态的数量
@@ -11,7 +11,7 @@ class MarkovForward(object):
         for i in range(total_count): # i表示总的循环数
             # for j in range(an): # j表示pi的index
                 # index_li = [j]
-            index_li = MarkovForward.get_sequence_index(i, an, m)
+            index_li = MarkovDirectly.get_sequence_index(i, an, m)
             print('q_t的集合：%s' % index_li, end='。') # 即本次循环的状态集合，即本次循环的选中的盒子的集合
             prob = pi[index_li[0]] # pi(i1)
             for k in range(m - 1):
@@ -56,7 +56,7 @@ b = [
 pi = [0.2, 0.4, 0.4]
 output = [0, 1, 0]
 
-mf = MarkovForward()
+mf = MarkovDirectly()
 print(mf.probability(a, b, pi, output))
 
 
@@ -76,6 +76,6 @@ b = [
 pi = (0.25, 0.25, 0.25, 0.25)
 output = [0, 0, 1, 1, 0]
 
-mf = MarkovForward()
+mf = MarkovDirectly()
 print(mf.probability(a, b, pi, output))
 
