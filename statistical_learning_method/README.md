@@ -66,5 +66,5 @@
 - 算法 B.2（DFP算法）
 - 算法 B.3（BFGS算法）
 
-##参考：
+## 参考：
 1. https://github.com/WenDesi/lihang_book_algorithm
