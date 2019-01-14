@@ -31,11 +31,13 @@
 
 ## 计算机专业基础理论体系
 1. 操作系统
-- [中国大学MOOC，计算机操作系统，骆斌、葛季栋](https://www.icourse163.org/course/NJU-1001571004?tid=1001877005)
+- [中国大学MOOC、南京大学，计算机操作系统，骆斌、葛季栋](https://www.icourse163.org/course/NJU-1001571004?tid=1001877005)
 2. 数据结构和算法
 - 算法导论，[美]Thomas H.Cormen
 3. 计算机网络
 4. 数据库
+5. 编译原理
+- [中国科技大学，编译原理，华保健](https://www.youtube.com/playlist?list=PLe68gYG2zUeXCCJBewCrWYCKGQc24ialj)
 
 ## Linux体系
 1. https://www.imooc.com/u/279399/courses?sort=publish
